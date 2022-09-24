@@ -14,7 +14,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
 	const args = [];
 
-	const employees = await deploy("Employees", {
+	const employees = await deploy("Projects", {
 		from: deployer,
 		args,
 		log: true,
@@ -30,4 +30,4 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 	log("---------------------------------");
 };
 
-module.exports.tags = ["all", "employees"];
+module.exports.tags = ["all", "projects"];

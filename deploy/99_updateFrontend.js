@@ -65,14 +65,14 @@ async function updateAbi(name, currentAbis) {
 
 async function updateContractAddress(contractName, currentAddresses) {
 	const contract = await ethers.getContract(contractName);
-	const chanId = network.config.chainId;
+	const chainId = network.config.chainId;
 
-	if (chanId in currentAddresses) {
-		if (!currentAddresses[chanId].includes(contract.address)) {
-			currentAddresses[chanId].push(contract.address);
-		}
+	if (chainId in currentAddresses) {
+		currentAddresses[chainId][contractName] = contract.address;
 	} else {
-		currentAddresses[chanId] = [contract.address];
+		currentAddresses[chainId] = {
+			[contractName]: contract.address,
+		};
 	}
 }
 
