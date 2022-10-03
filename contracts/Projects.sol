@@ -15,6 +15,7 @@ contract Projects{
         address payable client;
         uint creationTime;
         uint[] checkpointRewards;
+        string[] checkpointNames;
         mapping(uint => bool) checkpointsCompleted;
     }
     
@@ -65,7 +66,7 @@ contract Projects{
     
     //Add project. For Checkpoint only reward values as uint[] is passed. By default all checkpoints.completed == false.
     //In case client does not want to have a checkpoint based reward, a single checkpoint corresponding to 100% completion will be made (handled by stack application).
-    function addProject(string calldata projectTitle, string calldata projectDescription, uint duration, uint[] calldata _checkpointRewards) external returns(bool) {
+    function addProject(string calldata projectTitle, string calldata projectDescription, uint duration, string[] memory _checkpointNames, uint[] calldata _checkpointRewards) public returns(bool) {
         uint _id = projectIndex + 1;
         require(_checkpointRewards.length > 0, "Checkpoints required");
         require(projects[_id].id == 0, "Project already added");
@@ -77,6 +78,7 @@ contract Projects{
         projects[_id].client = payable(msg.sender);
         projects[_id].creationTime = block.timestamp;
         projects[_id].checkpointRewards = _checkpointRewards;
+        projects[_id].checkpointNames = _checkpointNames;
 
         allProjects.push(_id);
 
@@ -85,7 +87,7 @@ contract Projects{
     }
     
     //Assign project. Client will also have to transfer value to smart contract at this point.
-    function assign(uint _id, address payable assigneeAddress) external projectExists(_id) onlyClient(_id) payable returns(bool) {
+    function assign(uint _id, address payable assigneeAddress) public projectExists(_id) onlyClient(_id) payable returns(bool) {
         require(projects[_id].assignee == address(0), "Project already assigned");
         require(assigneeAddress != address(0), "Zero address submitted");
         
@@ -105,7 +107,7 @@ contract Projects{
     }
     
     //mark checkpoint as completed and transfer reward
-    function checkpointCompleted(uint _id, uint index) external projectExists(_id) onlyClient(_id) isAssigned(_id) returns(bool) {
+    function checkpointCompleted(uint _id, uint index) public projectExists(_id) onlyClient(_id) isAssigned(_id) returns(bool) {
         require(index < projects[_id].checkpointRewards.length, "Checkpoint index out of bounds");
         require(!projects[_id].checkpointsCompleted[index], "Checkpoint already completed");
         
@@ -134,7 +136,7 @@ contract Projects{
     }
     
     //delete project. Requires unassigning first so that remainingReward is not lost.
-    function deleteProject(uint _id) external projectExists(_id) onlyClient(_id) returns(bool) {
+    function deleteProject(uint _id) public projectExists(_id) onlyClient(_id) returns(bool) {
         if (projects[_id].assignee != address(0))
             unassign(_id);
         
