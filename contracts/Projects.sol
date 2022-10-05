@@ -81,6 +81,7 @@ contract Projects{
         projects[_id].checkpointNames = _checkpointNames;
 
         allProjects.push(_id);
+        projectIndex++;
 
         emit ProjectAdded(_id, msg.sender);
         return true;

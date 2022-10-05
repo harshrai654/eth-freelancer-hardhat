@@ -13,6 +13,7 @@ const FRONTEND_ABI_FILE = path.resolve(__dirname, FRONTEND_CONST_DIR_ADDRESS, "a
 const CONTRACTS_DIR = path.resolve(__dirname, "../contracts");
 const contractNames = fs
 	.readdirSync(CONTRACTS_DIR)
+	.filter((name) => name.endsWith(".sol"))
 	.map((name) => name.substring(0, name.indexOf(".")));
 
 module.exports = async () => {
