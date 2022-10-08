@@ -170,7 +170,7 @@ contract Projects{
         );
     }
 
-    function getCheckpointRewardsDetails(uint _id) public view projectExists(_id) returns(uint[] memory, bool[] memory) {
+    function getCheckpointRewardsDetails(uint _id) public view projectExists(_id) returns(string[] memory, uint[] memory, bool[] memory) {
         bool[] memory _tempCheckpoints = new bool[](projects[_id].checkpointRewards.length);
 
         for(uint i=0; i<projects[_id].checkpointRewards.length; i++){
@@ -178,6 +178,7 @@ contract Projects{
         }
 
         return (
+            projects[_id].checkpointNames,
             projects[_id].checkpointRewards,
             _tempCheckpoints
         );
