@@ -17,6 +17,8 @@ contract Projects{
         uint[] checkpointRewards;
         string[] checkpointNames;
         mapping(uint => bool) checkpointsCompleted;
+        mapping(address => bool) applicants;
+        address[] applicantsList;
     }
     
     //Stores all project id's for getter function.
@@ -107,6 +109,16 @@ contract Projects{
         return true;
     }
     
+    //Apply for a project, if not already applied. Client cannot apply.
+    function applyForProject(uint _id) public projectExists(_id) returns(bool) {
+        require(msg.sender != projects[_id].client, "Client cannot apply");
+        require(!projects[_id].applicants[msg.sender], "Already applied");
+        
+        projects[_id].applicants[msg.sender] = true;
+        projects[_id].applicantsList.push(msg.sender);
+        return true;
+    }
+
     //mark checkpoint as completed and transfer reward
     function checkpointCompleted(uint _id, uint index) public projectExists(_id) onlyClient(_id) isAssigned(_id) returns(bool) {
         require(index < projects[_id].checkpointRewards.length, "Checkpoint index out of bounds");
@@ -168,6 +180,10 @@ contract Projects{
             projects[_id].projectDescription,
             projects[_id].creationTime
         );
+    }
+
+    function getProjectApplicants(uint _id) public view projectExists(_id) returns(address[] memory) {
+        return projects[_id].applicantsList;
     }
 
     function getCheckpointRewardsDetails(uint _id) public view projectExists(_id) returns(string[] memory, uint[] memory, bool[] memory) {
