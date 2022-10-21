@@ -17,7 +17,7 @@ contract Projects{
         uint[] checkpointRewards;
         string[] checkpointNames;
         mapping(uint => bool) checkpointsCompleted;
-        mapping(address => bool) applicants;
+        mapping(address => uint) applicants;
         address[] applicantsList;
     }
     
@@ -100,8 +100,10 @@ contract Projects{
                 totalReward += projects[_id].checkpointRewards[i];
             }
         }
-        
-        require(msg.value == totalReward, "Wrong amount submitted");
+
+        if(msg.value < totalReward){
+            revert("Insufficient funds");
+        }
         
         projects[_id].assignee = assigneeAddress;
         
@@ -112,10 +114,20 @@ contract Projects{
     //Apply for a project, if not already applied. Client cannot apply.
     function applyForProject(uint _id) public projectExists(_id) returns(bool) {
         require(msg.sender != projects[_id].client, "Client cannot apply");
-        require(!projects[_id].applicants[msg.sender], "Already applied");
+        require(projects[_id].applicants[msg.sender] == 0, "Already applied");
         
-        projects[_id].applicants[msg.sender] = true;
         projects[_id].applicantsList.push(msg.sender);
+        projects[_id].applicants[msg.sender] = projects[_id].applicantsList.length;
+        return true;
+    }
+
+    function cancelApplyForProject(uint _id) public projectExists(_id) returns(bool) {
+        require(msg.sender != projects[_id].client, "Client cannot cancel application");
+        require(projects[_id].applicants[msg.sender] != 0, "No previous application found");
+        
+        uint index = projects[_id].applicants[msg.sender];
+        projects[_id].applicants[msg.sender] = 0;
+        delete projects[_id].applicantsList[index-1];
         return true;
     }
 
