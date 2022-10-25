@@ -16,6 +16,7 @@ contract Projects{
         uint creationTime;
         uint[] checkpointRewards;
         string[] checkpointNames;
+        string[] checkpointLinks;
         mapping(uint => bool) checkpointsCompleted;
         mapping(address => uint) applicants;
         address[] applicantsList;
@@ -81,6 +82,7 @@ contract Projects{
         projects[_id].creationTime = block.timestamp;
         projects[_id].checkpointRewards = _checkpointRewards;
         projects[_id].checkpointNames = _checkpointNames;
+        projects[_id].checkpointLinks = new string[](_checkpointRewards.length);
 
         allProjects.push(_id);
         projectIndex++;
@@ -111,6 +113,25 @@ contract Projects{
         return true;
     }
     
+    //Set checkpoint link if checkpoint is not completed. If checkpoint is completed, link cannot be changed. Only assignee can do this.
+    function setCheckpointLink(uint _id, uint _checkpointIndex, string calldata _link) public projectExists(_id) isAssigned(_id) onlyAssignee(_id) returns(bool) {
+        require(_checkpointIndex < projects[_id].checkpointLinks.length, "Invalid checkpoint index");
+        require(!projects[_id].checkpointsCompleted[_checkpointIndex], "Checkpoint already completed");
+        
+        projects[_id].checkpointLinks[_checkpointIndex] = _link;
+        return true;
+    }
+
+    //Verify checkpoint. Only client can do this.
+    function verifyCheckpoint(uint _id, uint _checkpointIndex) public projectExists(_id) isAssigned(_id) onlyClient(_id) returns(bool) {
+        require(_checkpointIndex < projects[_id].checkpointLinks.length, "Invalid checkpoint index");
+        require(!projects[_id].checkpointsCompleted[_checkpointIndex], "Checkpoint already completed");
+        
+        projects[_id].checkpointsCompleted[_checkpointIndex] = true;
+        emit CheckpointCompleted(_id, _checkpointIndex);
+        return true;
+    }
+
     //Apply for a project, if not already applied. Client cannot apply.
     function applyForProject(uint _id) public projectExists(_id) returns(bool) {
         require(msg.sender != projects[_id].client, "Client cannot apply");
@@ -198,7 +219,7 @@ contract Projects{
         return projects[_id].applicantsList;
     }
 
-    function getCheckpointRewardsDetails(uint _id) public view projectExists(_id) returns(string[] memory, uint[] memory, bool[] memory) {
+    function getCheckpointRewardsDetails(uint _id) public view projectExists(_id) returns(string[] memory, uint[] memory, bool[] memory, string[] memory) {
         bool[] memory _tempCheckpoints = new bool[](projects[_id].checkpointRewards.length);
 
         for(uint i=0; i<projects[_id].checkpointRewards.length; i++){
@@ -208,7 +229,8 @@ contract Projects{
         return (
             projects[_id].checkpointNames,
             projects[_id].checkpointRewards,
-            _tempCheckpoints
+            _tempCheckpoints,
+            projects[_id].checkpointLinks
         );
     }
     
