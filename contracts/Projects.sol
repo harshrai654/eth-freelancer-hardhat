@@ -122,12 +122,14 @@ contract Projects{
         return true;
     }
 
-    //Verify checkpoint. Only client can do this.
+    //Verify checkpoint by client. Only client can do this. set checkpoint link at given index to empty string after this.
     function verifyCheckpoint(uint _id, uint _checkpointIndex) public projectExists(_id) isAssigned(_id) onlyClient(_id) returns(bool) {
         require(_checkpointIndex < projects[_id].checkpointLinks.length, "Invalid checkpoint index");
         require(!projects[_id].checkpointsCompleted[_checkpointIndex], "Checkpoint already completed");
         
         projects[_id].checkpointsCompleted[_checkpointIndex] = true;
+        projects[_id].checkpointLinks[_checkpointIndex] = "";
+        
         emit CheckpointCompleted(_id, _checkpointIndex);
         return true;
     }
@@ -164,23 +166,31 @@ contract Projects{
         
         return true;
     }
-    
-    //Called by client or assignee to unassign assignee from the project
-    function unassign(uint _id) public projectExists(_id) isAssigned(_id) onlyClientOrAssignee(_id) returns(bool) {
-        delete projects[_id].assignee;
+
+    //Unassign project. Only client can do this if there is no checkpoint link in checkpointLinks array not equal to empty string, else only assignee can do this. Transfer rewards for uncompleted checkpoints to client.
+    function unassign(uint _id) public projectExists(_id) onlyClientOrAssignee(_id) returns(bool) {
+        require(projects[_id].assignee != address(0), "Project not yet assigned");
         
-        emit ProjectUnassigned(_id);
+        for(uint i=0; i<projects[_id].checkpointLinks.length; i++){
+            if(!projects[_id].checkpointsCompleted[i] && bytes(projects[_id].checkpointLinks[i]).length > 0){
+                revert("Cannot unassign project. Checkpoint link not empty");
+            }
+        }
+        
         uint totalReward;
         for(uint i=0; i<projects[_id].checkpointRewards.length; i++){
             if(!projects[_id].checkpointsCompleted[i]){
                 totalReward += projects[_id].checkpointRewards[i];
             }
         }
-    
+        
+        projects[_id].assignee = payable(0);
         projects[_id].client.transfer(totalReward);
+        
+        emit ProjectUnassigned(_id);
         return true;
-    }
-    
+    }    
+
     //delete project. Requires unassigning first so that remainingReward is not lost.
     function deleteProject(uint _id) public projectExists(_id) onlyClient(_id) returns(bool) {
         if (projects[_id].assignee != address(0))
